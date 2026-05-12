@@ -46,7 +46,7 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
     const sabores = Array.isArray(it.sabores) ? it.sabores.filter(Boolean) : []
     const comps = Array.isArray(it.complementos) ? it.complementos.filter(Boolean) : []
     let html = `<div class="item">
-      <div class="item-line"><span>${qty}x ${nome}</span><span>R$ ${fmtBRL(preco)}</span></div>`
+      <table class="line"><tr><td>${qty}x ${nome}</td><td>R$ ${fmtBRL(preco)}</td></tr></table>`
     if (sabores.length) html += `<div class="sub">Sabores: ${sabores.join(', ')}</div>`
     if (comps.length) html += `<div class="sub">Complementos: ${comps.join(', ')}</div>`
     html += `</div>`
@@ -94,18 +94,15 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
   hr { border: 0; border-top: 2px solid #000; margin: 2mm 0; }
   .block { margin: 2mm 0; }
   .item { margin-bottom: 2mm; }
-  .item-line {
-    display: table; width: 100%; table-layout: fixed; font-size: 13px;
-  }
-  .item-line span { display: table-cell; vertical-align: top; }
-  .item-line span:first-child { width: auto; padding-right: 2mm; }
-  .item-line span:last-child { width: 18mm; text-align: right; white-space: nowrap; }
+  table.line { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.line td { padding: 0; vertical-align: top; }
+  table.line td:last-child { text-align: right; white-space: nowrap; width: 1%; padding-left: 2mm; }
   .sub { font-size: 11px; margin-left: 2mm; font-weight: normal; word-break: break-word; }
   .totals { margin-top: 2mm; font-size: 12px; }
-  .totals .row { display: table; width: 100%; table-layout: fixed; padding: 0.5mm 0; }
-  .totals .row span { display: table-cell; }
-  .totals .row span:last-child { text-align: right; width: 22mm; white-space: nowrap; }
-  .grand { font-size: 15px; border-top: 2px solid #000; padding-top: 1mm; margin-top: 1mm; }
+  .totals table { width: 100%; border-collapse: collapse; }
+  .totals td { padding: 0.4mm 0; }
+  .totals td:last-child { text-align: right; white-space: nowrap; width: 1%; padding-left: 2mm; }
+  .grand td { font-size: 15px; border-top: 2px solid #000; padding-top: 1mm; }
   .footer { text-align: center; font-size: 10px; margin-top: 3mm; font-weight: normal; }
   .obs { font-size: 11px; margin-top: 2mm; padding: 1mm; border: 1px solid #000; font-weight: normal; }
 </style>
@@ -126,9 +123,11 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
   ${order.observacoes ? `<div class="obs"><b>Obs:</b> ${order.observacoes}</div>` : ''}
   <hr/>
   <div class="totals">
-    <div class="row"><span>Subtotal</span><span>R$ ${fmtBRL(subtotal)}</span></div>
-    ${taxa > 0 ? `<div class="row"><span>Taxa entrega</span><span>R$ ${fmtBRL(taxa)}</span></div>` : ''}
-    <div class="row grand"><span>TOTAL</span><span>R$ ${fmtBRL(grand)}</span></div>
+    <table>
+      <tr><td>Subtotal</td><td>R$ ${fmtBRL(subtotal)}</td></tr>
+      ${taxa > 0 ? `<tr><td>Taxa entrega</td><td>R$ ${fmtBRL(taxa)}</td></tr>` : ''}
+      <tr class="grand"><td>TOTAL</td><td>R$ ${fmtBRL(grand)}</td></tr>
+    </table>
   </div>
   <hr/>
   <div class="block"><b>PAGAMENTO</b><br/>${pgmtTxt}</div>
