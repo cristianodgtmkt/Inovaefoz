@@ -75,17 +75,17 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
 <meta charset="utf-8"/>
 <title>Pedido #${(order.id || '').slice(0, 6)}</title>
 <style>
-  @page { size: 72mm auto; margin: 0; padding: 0; }
+  @page { size: 70mm auto; margin: 0; padding: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   html { margin: 0; padding: 0; }
   body {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 12px;
     font-weight: bold;
-    width: 72mm;
-    max-width: 72mm;
+    width: 68mm;
+    max-width: 68mm;
     margin: 0;
-    padding: 2mm 2mm 6mm 2mm;
+    padding: 2mm 1mm 6mm 1mm;
     color: #000;
     line-height: 1.35;
   }
