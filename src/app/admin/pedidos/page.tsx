@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { TENANTS, getTenant } from '@/lib/tenants'
 import { fetchPedidos, updatePedidoStatus, subscribePedidos, fetchConversa, type PedidoRow, type ConversaRow } from '@/lib/db/queries'
+import { printCoupon } from '@/lib/utils/print-coupon'
 
 // Cards UI: Bot section + Cozinha section, status REAL do admin Vercel
 const COLS_BOT = [
@@ -135,7 +136,7 @@ function OrderCard({ order, col, expanded, onToggle, brand, dragging, onDragStar
           </section>
 
           <div className="ocard-actions">
-            <button className="btn btn-soft" onClick={() => window.print()}><Printer size={13} />Imprimir</button>
+            <button className="btn btn-soft" onClick={() => printCoupon(order, brand.name)}><Printer size={13} />Imprimir</button>
             <button className="btn btn-soft" onClick={() => onOpenChat(order)}><MessageSquare size={13} />Conversa</button>
           </div>
         </div>
