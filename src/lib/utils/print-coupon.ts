@@ -20,7 +20,7 @@ interface OrderForPrint {
   tipo_entrega?: string
 }
 
-const WIDTH = 32  // chars por linha (calibrado pra 72mm Courier 12px)
+const WIDTH = 28  // chars por linha (calibrado pra 72mm Courier 14px bold)
 
 function fmtBRL(n: number): string {
   return `R$ ${(n || 0).toFixed(2).replace('.', ',')}`
@@ -145,11 +145,11 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
   html, body { margin: 0; padding: 0; width: 72mm; }
   body {
     font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: bold;
     color: #000;
-    padding: 2mm 1mm 6mm 1mm;
-    line-height: 1.3;
+    padding: 2mm 0 6mm 0;
+    line-height: 1.4;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
