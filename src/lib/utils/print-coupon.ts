@@ -75,28 +75,33 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
 <meta charset="utf-8"/>
 <title>Pedido #${(order.id || '').slice(0, 6)}</title>
 <style>
-  @page { size: 80mm auto; margin: 0; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { size: 72mm auto; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { width: 72mm; }
   body {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 12px;
-    width: 80mm;
-    padding: 4mm 3mm;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    width: 72mm;
+    padding: 2mm 2mm 8mm 2mm;
     color: #000;
-    line-height: 1.35;
+    line-height: 1.4;
   }
-  .header { text-align: center; font-weight: bold; font-size: 14px; margin-bottom: 2mm; }
-  .meta { text-align: center; font-size: 11px; margin-bottom: 3mm; }
-  hr { border: 0; border-top: 1px dashed #000; margin: 2mm 0; }
+  .header { text-align: center; font-size: 17px; margin-bottom: 1mm; letter-spacing: 0.5px; }
+  .meta { text-align: center; font-size: 12px; margin-bottom: 2mm; font-weight: normal; }
+  hr { border: 0; border-top: 2px solid #000; margin: 2mm 0; }
   .block { margin: 2mm 0; }
-  .item { margin-bottom: 2mm; }
-  .item-line { display: flex; justify-content: space-between; font-weight: bold; }
-  .sub { font-size: 11px; margin-left: 3mm; color: #000; }
-  .totals { margin-top: 2mm; }
-  .totals div { display: flex; justify-content: space-between; }
-  .grand { font-size: 14px; font-weight: bold; border-top: 1px solid #000; padding-top: 1mm; margin-top: 1mm; }
-  .footer { text-align: center; font-size: 10px; margin-top: 4mm; }
-  .obs { font-style: italic; font-size: 11px; margin-top: 2mm; padding: 1mm; border: 1px dashed #000; }
+  .label { font-size: 11px; letter-spacing: 1px; }
+  .item { margin-bottom: 3mm; }
+  .item-line { display: flex; justify-content: space-between; font-size: 14px; gap: 4mm; }
+  .item-line span:first-child { flex: 1; }
+  .item-line span:last-child { white-space: nowrap; }
+  .sub { font-size: 12px; margin-left: 2mm; font-weight: normal; word-break: break-word; }
+  .totals { margin-top: 2mm; font-size: 13px; }
+  .totals div { display: flex; justify-content: space-between; padding: 0.5mm 0; }
+  .grand { font-size: 16px; border-top: 2px solid #000; padding-top: 1mm; margin-top: 1mm; }
+  .footer { text-align: center; font-size: 10px; margin-top: 3mm; font-weight: normal; }
+  .obs { font-size: 12px; margin-top: 2mm; padding: 1mm; border: 1px solid #000; font-weight: normal; }
 </style>
 </head>
 <body>
