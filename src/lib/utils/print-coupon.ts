@@ -1,6 +1,6 @@
 /**
- * Print thermal coupon (80mm) for Elgin i9 / Bematech / etc.
- * Opens new window with formatted HTML + auto-triggers print dialog.
+ * Print thermal coupon (Elgin i9 / Bematech 80mm).
+ * Layout: <pre> Courier + padding por chars (estilo iFood). Sem flex/table.
  */
 
 interface OrderForPrint {
@@ -20,8 +20,10 @@ interface OrderForPrint {
   tipo_entrega?: string
 }
 
+const WIDTH = 32  // chars por linha (calibrado pra 72mm Courier 12px)
+
 function fmtBRL(n: number): string {
-  return (n || 0).toFixed(2).replace('.', ',')
+  return `R$ ${(n || 0).toFixed(2).replace('.', ',')}`
 }
 
 function fmtPhone(p: string): string {
@@ -29,6 +31,39 @@ function fmtPhone(p: string): string {
   if (d.length === 13) return `(${d.slice(2, 4)}) ${d.slice(4, 9)}-${d.slice(9)}`
   if (d.length === 12) return `(${d.slice(2, 4)}) ${d.slice(4, 8)}-${d.slice(8)}`
   return p
+}
+
+function center(s: string): string {
+  if (s.length >= WIDTH) return s
+  const pad = Math.floor((WIDTH - s.length) / 2)
+  return ' '.repeat(pad) + s
+}
+
+function row(label: string, value: string): string {
+  const total = label.length + value.length
+  if (total >= WIDTH) return label + '\n' + ' '.repeat(WIDTH - value.length) + value
+  return label + ' '.repeat(WIDTH - total) + value
+}
+
+function divider(char = '-'): string {
+  return char.repeat(WIDTH)
+}
+
+function wrap(text: string, indent = 0): string {
+  const max = WIDTH - indent
+  const words = text.split(' ')
+  const lines: string[] = []
+  let cur = ''
+  for (const w of words) {
+    if ((cur + ' ' + w).trim().length > max) {
+      lines.push(cur)
+      cur = w
+    } else {
+      cur = (cur + ' ' + w).trim()
+    }
+  }
+  if (cur) lines.push(cur)
+  return lines.map(l => ' '.repeat(indent) + l).join('\n')
 }
 
 export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra') {
@@ -39,35 +74,65 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
   const data = order.created_at ? new Date(order.created_at) : new Date()
   const dataStr = data.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 
-  const itemsHtml = items.map(it => {
+  const lines: string[] = []
+  lines.push(center(tenantName))
+  lines.push(center(`Pedido #${(order.id || '').slice(0, 6).toUpperCase()}`))
+  lines.push(center(dataStr))
+  lines.push(divider())
+  lines.push('CLIENTE')
+  lines.push(order.nome_cliente || 'Cliente')
+  lines.push(`Tel: ${fmtPhone(order.telefone_cliente || '')}`)
+  lines.push('')
+
+  if (order.tipo_entrega === 'retirada') {
+    lines.push('** RETIRADA NO LOCAL **')
+  } else {
+    lines.push('ENDERECO ENTREGA')
+    lines.push(wrap(order.endereco || '-'))
+    if (order.complemento_endereco) lines.push(wrap('Comp: ' + order.complemento_endereco))
+    lines.push(wrap('Bairro: ' + (order.bairro || '-')))
+  }
+  lines.push(divider())
+  lines.push(`ITENS DO PEDIDO (${items.length})`)
+
+  for (const it of items) {
     const qty = it.quantidade || it.qty || 1
     const nome = it.nome || it.name || ''
     const preco = it.preco_total || it.preco || 0
-    const sabores = Array.isArray(it.sabores) ? it.sabores.filter(Boolean) : []
-    const comps = Array.isArray(it.complementos) ? it.complementos.filter(Boolean) : []
-    let html = `<div class="item">
-      <table class="line"><tr><td>${qty}x ${nome}</td><td>R$ ${fmtBRL(preco)}</td></tr></table>`
-    if (sabores.length) html += `<div class="sub">Sabores: ${sabores.join(', ')}</div>`
-    if (comps.length) html += `<div class="sub">Complementos: ${comps.join(', ')}</div>`
-    html += `</div>`
-    return html
-  }).join('')
+    lines.push(row(`${qty}x ${nome}`, fmtBRL(preco)))
+    if (Array.isArray(it.sabores) && it.sabores.length) {
+      lines.push(wrap('Sabores: ' + it.sabores.filter(Boolean).join(', '), 2))
+    }
+    if (Array.isArray(it.complementos) && it.complementos.length) {
+      lines.push(wrap('Complementos: ' + it.complementos.filter(Boolean).join(', '), 2))
+    }
+  }
+
+  if (order.observacoes) {
+    lines.push('')
+    lines.push('OBS:')
+    lines.push(wrap(order.observacoes))
+  }
+  lines.push(divider())
+  lines.push(row('Subtotal:', fmtBRL(subtotal)))
+  if (taxa > 0) lines.push(row('Taxa entrega:', fmtBRL(taxa)))
+  lines.push(divider())
+  lines.push(row('TOTAL:', fmtBRL(grand)))
+  lines.push(divider())
 
   const pgmt = (order.forma_pagamento || '').toLowerCase()
   let pgmtTxt = pgmt.toUpperCase()
   if (pgmt === 'dinheiro') {
     pgmtTxt = order.troco_para && Number(order.troco_para) > 0
-      ? `DINHEIRO - troco p/ R$ ${fmtBRL(order.troco_para)}`
-      : 'DINHEIRO - sem troco (valor exato)'
+      ? `DINHEIRO (troco p/ R$ ${(order.troco_para).toFixed(2).replace('.', ',')})`
+      : 'DINHEIRO (sem troco)'
   }
+  lines.push('PAGAMENTO:')
+  lines.push(wrap(pgmtTxt))
+  lines.push(divider('='))
+  lines.push(center('Obrigado pela preferencia!'))
 
-  const enderecoBlock = order.tipo_entrega === 'retirada'
-    ? `<div class="block"><b>RETIRADA NO LOCAL</b></div>`
-    : `<div class="block">
-        <b>ENDEREGO ENTREGA</b><br/>
-        ${order.endereco || '-'}${order.complemento_endereco ? ` (${order.complemento_endereco})` : ''}<br/>
-        Bairro: ${order.bairro || '-'}
-      </div>`
+  const text = lines.join('\n')
 
   const html = `<!DOCTYPE html>
 <html>
@@ -75,66 +140,35 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
 <meta charset="utf-8"/>
 <title>Pedido #${(order.id || '').slice(0, 6)}</title>
 <style>
-  @page { size: 70mm auto; margin: 0; padding: 0; }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  html { margin: 0; padding: 0; }
+  @page { size: 72mm auto; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { margin: 0; padding: 0; width: 72mm; }
   body {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 12px;
     font-weight: bold;
-    width: 68mm;
-    max-width: 68mm;
-    margin: 0;
-    padding: 2mm 1mm 6mm 1mm;
     color: #000;
-    line-height: 1.35;
+    padding: 2mm 1mm 6mm 1mm;
+    line-height: 1.3;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  .header { text-align: center; font-size: 16px; margin-bottom: 1mm; }
-  .meta { text-align: center; font-size: 11px; margin-bottom: 2mm; font-weight: normal; }
-  hr { border: 0; border-top: 2px solid #000; margin: 2mm 0; }
-  .block { margin: 2mm 0; }
-  .item { margin-bottom: 2mm; }
-  table.line { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.line td { padding: 0; vertical-align: top; }
-  table.line td:last-child { text-align: right; white-space: nowrap; width: 1%; padding-left: 2mm; }
-  .sub { font-size: 11px; margin-left: 2mm; font-weight: normal; word-break: break-word; }
-  .totals { margin-top: 2mm; font-size: 12px; }
-  .totals table { width: 100%; border-collapse: collapse; }
-  .totals td { padding: 0.4mm 0; }
-  .totals td:last-child { text-align: right; white-space: nowrap; width: 1%; padding-left: 2mm; }
-  .grand td { font-size: 15px; border-top: 2px solid #000; padding-top: 1mm; }
-  .footer { text-align: center; font-size: 10px; margin-top: 3mm; font-weight: normal; }
-  .obs { font-size: 11px; margin-top: 2mm; padding: 1mm; border: 1px solid #000; font-weight: normal; }
+  pre {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
 </style>
 </head>
 <body>
-  <div class="header">${tenantName.toUpperCase()}</div>
-  <div class="meta">${dataStr}<br/>Pedido #${(order.id || '').slice(0, 6).toUpperCase()}</div>
-  <hr/>
-  <div class="block">
-    <b>CLIENTE</b><br/>
-    ${order.nome_cliente || 'Cliente'}<br/>
-    Tel: ${fmtPhone(order.telefone_cliente || '')}
-  </div>
-  ${enderecoBlock}
-  <hr/>
-  <div class="block"><b>ITENS</b></div>
-  ${itemsHtml}
-  ${order.observacoes ? `<div class="obs"><b>Obs:</b> ${order.observacoes}</div>` : ''}
-  <hr/>
-  <div class="totals">
-    <table>
-      <tr><td>Subtotal</td><td>R$ ${fmtBRL(subtotal)}</td></tr>
-      ${taxa > 0 ? `<tr><td>Taxa entrega</td><td>R$ ${fmtBRL(taxa)}</td></tr>` : ''}
-      <tr class="grand"><td>TOTAL</td><td>R$ ${fmtBRL(grand)}</td></tr>
-    </table>
-  </div>
-  <hr/>
-  <div class="block"><b>PAGAMENTO</b><br/>${pgmtTxt}</div>
-  <div class="footer">--- Obrigado pela preferencia! ---</div>
-  <script>
-    window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }
-  </script>
+<pre>${text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+<script>
+  window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }
+</script>
 </body>
 </html>`
 
