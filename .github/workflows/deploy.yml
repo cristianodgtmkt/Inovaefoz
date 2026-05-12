@@ -1,0 +1,61 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build tarball
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          tar -czf /tmp/acai-full.tar.gz src migrations next.config.js package.json
+
+      - name: Setup SSH known hosts
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Upload + deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+
+          echo "==> Upload tarball"
+          sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no -P "$VPS_PORT" \
+            /tmp/acai-full.tar.gz "root@$VPS_HOST:/tmp/acai-full.tar.gz"
+
+          echo "==> Extract + rebuild"
+          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no -p "$VPS_PORT" "root@$VPS_HOST" '
+            set -e
+            rm -rf /root/src /root/migrations /root/next.config.js 2>/dev/null || true
+            cd /opt/acai-ai
+            tar -xzf /tmp/acai-full.tar.gz
+            SERVICE=$(docker compose config --services | head -1)
+            echo "==> Service: $SERVICE"
+            docker compose up -d --build "$SERVICE"
+            sleep 5
+            docker compose logs --tail 20 "$SERVICE" | tail -20
+            echo "==> Done"
+          '
+
+      - name: Health check
+        run: |
+          sleep 8
+          for i in 1 2 3 4 5; do
+            CODE=$(curl -sk -o /dev/null -w "%{http_code}" https://acai.inovaefoz.com.br/api/health)
+            if [ "$CODE" = "200" ]; then echo "Health OK ($CODE)"; exit 0; fi
+            echo "attempt $i: $CODE"; sleep 5
+          done
+          echo "Health check FAIL"; exit 1

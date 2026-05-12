@@ -1,0 +1,24 @@
+services:
+  acai_ai:
+    build: .
+    container_name: acai_ai_app
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:3107:3107"
+    networks:
+      - acai_ai_net
+      - evolution_evolution_net  # pra falar com evolution-go
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3107/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+networks:
+  acai_ai_net:
+    name: acai_ai_net
+    driver: bridge
+  evolution_evolution_net:
+    external: true
