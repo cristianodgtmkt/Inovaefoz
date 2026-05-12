@@ -75,33 +75,39 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
 <meta charset="utf-8"/>
 <title>Pedido #${(order.id || '').slice(0, 6)}</title>
 <style>
-  @page { size: 72mm auto; margin: 0; }
+  @page { size: 80mm auto; margin: 0; padding: 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  html, body { width: 72mm; }
+  html { margin: 0; padding: 0; }
   body {
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: bold;
-    width: 72mm;
-    padding: 2mm 2mm 8mm 2mm;
+    width: 80mm;
+    max-width: 80mm;
+    margin: 0;
+    padding: 2mm 3mm 6mm 3mm;
     color: #000;
-    line-height: 1.4;
+    line-height: 1.35;
   }
-  .header { text-align: center; font-size: 17px; margin-bottom: 1mm; letter-spacing: 0.5px; }
-  .meta { text-align: center; font-size: 12px; margin-bottom: 2mm; font-weight: normal; }
+  .header { text-align: center; font-size: 16px; margin-bottom: 1mm; }
+  .meta { text-align: center; font-size: 11px; margin-bottom: 2mm; font-weight: normal; }
   hr { border: 0; border-top: 2px solid #000; margin: 2mm 0; }
   .block { margin: 2mm 0; }
-  .label { font-size: 11px; letter-spacing: 1px; }
-  .item { margin-bottom: 3mm; }
-  .item-line { display: flex; justify-content: space-between; font-size: 14px; gap: 4mm; }
-  .item-line span:first-child { flex: 1; }
-  .item-line span:last-child { white-space: nowrap; }
-  .sub { font-size: 12px; margin-left: 2mm; font-weight: normal; word-break: break-word; }
-  .totals { margin-top: 2mm; font-size: 13px; }
-  .totals div { display: flex; justify-content: space-between; padding: 0.5mm 0; }
-  .grand { font-size: 16px; border-top: 2px solid #000; padding-top: 1mm; margin-top: 1mm; }
+  .item { margin-bottom: 2mm; }
+  .item-line {
+    display: table; width: 100%; table-layout: fixed; font-size: 13px;
+  }
+  .item-line span { display: table-cell; vertical-align: top; }
+  .item-line span:first-child { width: auto; padding-right: 2mm; }
+  .item-line span:last-child { width: 18mm; text-align: right; white-space: nowrap; }
+  .sub { font-size: 11px; margin-left: 2mm; font-weight: normal; word-break: break-word; }
+  .totals { margin-top: 2mm; font-size: 12px; }
+  .totals .row { display: table; width: 100%; table-layout: fixed; padding: 0.5mm 0; }
+  .totals .row span { display: table-cell; }
+  .totals .row span:last-child { text-align: right; width: 22mm; white-space: nowrap; }
+  .grand { font-size: 15px; border-top: 2px solid #000; padding-top: 1mm; margin-top: 1mm; }
   .footer { text-align: center; font-size: 10px; margin-top: 3mm; font-weight: normal; }
-  .obs { font-size: 12px; margin-top: 2mm; padding: 1mm; border: 1px solid #000; font-weight: normal; }
+  .obs { font-size: 11px; margin-top: 2mm; padding: 1mm; border: 1px solid #000; font-weight: normal; }
 </style>
 </head>
 <body>
@@ -120,9 +126,9 @@ export function printCoupon(order: OrderForPrint, tenantName = 'Açaí da Barra'
   ${order.observacoes ? `<div class="obs"><b>Obs:</b> ${order.observacoes}</div>` : ''}
   <hr/>
   <div class="totals">
-    <div><span>Subtotal</span><span>R$ ${fmtBRL(subtotal)}</span></div>
-    ${taxa > 0 ? `<div><span>Taxa entrega</span><span>R$ ${fmtBRL(taxa)}</span></div>` : ''}
-    <div class="grand"><span>TOTAL</span><span>R$ ${fmtBRL(grand)}</span></div>
+    <div class="row"><span>Subtotal</span><span>R$ ${fmtBRL(subtotal)}</span></div>
+    ${taxa > 0 ? `<div class="row"><span>Taxa entrega</span><span>R$ ${fmtBRL(taxa)}</span></div>` : ''}
+    <div class="row grand"><span>TOTAL</span><span>R$ ${fmtBRL(grand)}</span></div>
   </div>
   <hr/>
   <div class="block"><b>PAGAMENTO</b><br/>${pgmtTxt}</div>
